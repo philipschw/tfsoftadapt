@@ -1,6 +1,6 @@
 # SoftAdapt
 
-This repository contains an implementation of the [SoftAdapt algorithm](https://arxiv.org/pdf/1912.12355.pdf)(techniques for adaptive loss balancing of multi-tasking neural networks) for TensorFlow. We made essentially a one-to-one copy of [SoftAdapt](https://github.com/dr-aheydari/SoftAdapt) and replaced `torch` functions by `tensorflow` functions. All credit and glory belongs to the quoted authors and repository. Thank you very much!
+This repository contains an implementation of the [SoftAdapt algorithm](https://arxiv.org/pdf/1912.12355.pdf) (techniques for adaptive loss balancing of multi-tasking neural networks) for TensorFlow. We made essentially a one-to-one copy of [SoftAdapt](https://github.com/dr-aheydari/SoftAdapt) and replaced `torch` functions by `tensorflow` functions. All credit and glory belongs to the quoted authors and repository. Thank you very much!
 
 [![arXiv:10.48550/arXiv.1912.12355](http://img.shields.io/badge/arXiv-110.48550/arXiv.2206.04047-A42C25.svg)](
 https://doi.org/10.48550/arXiv.1912.12355)
