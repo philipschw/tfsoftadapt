@@ -78,6 +78,6 @@ class TFSoftAdaptBase():
             None.
 
         """
-        return _get_finite_difference(input_array = input_tensor.numpy(),
+        return _get_finite_difference(input_array = input_tensor,
                                       order = order,
                                       verbose = verbose)

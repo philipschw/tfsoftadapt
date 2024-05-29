@@ -37,9 +37,7 @@ Clearly, the first loss component is not being optimized as well as the other tw
 from tfsoftadapt import TFSoftAdapt, TFNormalizedSoftAdapt, TFLossWeightedSoftAdapt
 import tensorflow as tf
 # We redefine the loss components above for the sake of completeness.
-loss_component_1 = tf.constant([1, 2, 3, 4, 5])
-loss_component_2 = tf.constant([150, 100, 50, 10, 0.1])
-loss_component_3 = tf.constant([1500, 1000, 500, 100, 1])
+loss_components = tf.constant([[1.0, 2.0, 3.0, 4.0, 5.0], [150.0, 100.0, 50.0, 10.0, 0.1], [1500.0, 1000.0, 500.0, 100.0, 1.0]])
 
 # Here we define the different SoftAdapt objects
 softadapt_object  = TFSoftAdapt(beta=0.1)
@@ -48,18 +46,33 @@ loss_weighted_softadapt_object  = TFLossWeightedSoftAdapt(beta=0.1)
 ```
 (1) The original variant calculations are: 
 ```python
-softadapt_object.get_component_weights(loss_component_1, loss_component_2, loss_component_3)
+softadapt_object.get_component_weights(loss_components)
 # <tf.Tensor: shape=(3,), dtype=float32, numpy=array([9.9343336e-01, 6.5666283e-03, 3.8908041e-22], dtype=float32)>
 ```
 (2) Normalized slopes variant outputs:
 ```python
-normalized_softadapt_object.get_component_weights(loss_component_1, loss_component_2, loss_component_3)
+normalized_softadapt_object.get_component_weights(loss_components)
 # <tf.Tensor: shape=(3,), dtype=float32, numpy=array([0.32207233, 0.32507923, 0.35284847], dtype=float32)>
 ```
 and (3) the loss-weighted variant results in:
  ```python
-loss_weighted_softadapt_object.get_component_weights(loss_component_1, loss_component_2, loss_component_3)
+loss_weighted_softadapt_object.get_component_weights(loss_components)
 # <tf.Tensor: shape=(3,), dtype=float32, numpy=array([8.79777193e-01, 1.20222814e-01, 7.12104538e-20], dtype=float32)>
+```
+When executed withing `@tf.function` you should declare a loss tracker and the weights as variables outside of the autograph environment.
+```python
+weightsloss1 = tf.Variable(np.ones(shape=(number_loss_summands)), dtype=tf.float32)
+
+loss_tracker = tf.Variable(
+            tf.zeros(shape=(number_past_loss_values_per_summand, number_loss_summands)),
+            trainable=False,
+            dtype=tf.float32,
+        )
+
+# the next two statements are executed in a tf.function environment
+weightsloss1.assign(softadapt_object.get_component_weights(tf.transpose(loss_tracker), verbose=False))
+
+loss1 = tf.reduce_sum(weightsloss1 * loss1_unadjusted_summands)
 ```
 
 ## Citing their (not mine!) work.

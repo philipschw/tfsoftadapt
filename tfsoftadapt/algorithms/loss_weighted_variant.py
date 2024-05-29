@@ -31,7 +31,7 @@ class TFLossWeightedSoftAdapt(TFSoftAdaptBase):
         self.accuracy_order = accuracy_order
 
     def get_component_weights(self,
-                               *loss_component_values: Tuple[tf.Tensor],
+                               loss_component_values: tf.Tensor,
                                verbose: bool = True):
         """Class method for SoftAdapt weights.
 
@@ -56,21 +56,26 @@ class TFLossWeightedSoftAdapt(TFSoftAdaptBase):
             print("==> Warning: You have only passed on the values of one loss"
                   " component, which will result in trivial weighting.")
 
-        rates_of_change = []
-        average_loss_values = []
+        loss_shape_0 = loss_component_values.get_shape()[0]
+        rates_of_change = tf.TensorArray(tf.float32, size=loss_shape_0, dynamic_size=False)
+        average_loss_values = tf.TensorArray(tf.float32, size=loss_shape_0, dynamic_size=False)
 
-        for loss_points in loss_component_values:
+        for k in tf.range(loss_shape_0):
             # Compute the rates of change for each one of the loss components.
-            rates_of_change.append(
-                self._compute_rates_of_change(loss_points,
-                                              self.accuracy_order,
-                                              verbose=verbose))
-            average_loss_values.append(tf.reduce_mean(loss_points).numpy())
+            rates_of_change = rates_of_change.write(
+              k, 
+              self._compute_rates_of_change(
+                loss_component_values[k],
+                self.accuracy_order,
+                verbose=verbose
+              )
+            )
 
-        rates_of_change = tf.constant(rates_of_change, dtype=tf.float32)
-        average_loss_values = tf.constant(average_loss_values, dtype=tf.float32)
+            average_loss_values = average_loss_values.write(k, tf.reduce_mean(loss_component_values[k]))
+
+
         # Calculate the weight and return the values.
-        return self._softmax(input_tensor=rates_of_change,
+        return self._softmax(input_tensor=rates_of_change.stack(),
                              beta=self.beta,
-                             numerator_weights = average_loss_values,
+                             numerator_weights = average_loss_values.stack(),
                              )

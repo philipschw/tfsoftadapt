@@ -1,11 +1,11 @@
 """Internal implementation of """
-import numpy
+import tensorflow as tf
 from findiff import coefficients
 from ..constants._finite_difference_constants import (_FIRST_ORDER_COEFFICIENTS,
                         _THIRD_ORDER_COEFFICIENTS, _FIFTH_ORDER_COEFFICIENTS)
 
 
-def _get_finite_difference(input_array: numpy.array,
+def _get_finite_difference(input_array: tf.Tensor,
                            order: int = None,
                            verbose: bool = True):
     """Internal utility method for estimating rate of change.
@@ -67,8 +67,9 @@ def _get_finite_difference(input_array: numpy.array,
                          "check the arguments passed to the function.")
 
     if order_is_even:
+        # Assuming coefficients function and its output structure
         constants = coefficients(deriv=1, acc=order)["forward"]["coefficients"]
-
+        constants = tf.convert_to_tensor(constants, dtype=tf.float32)
     else:
         if order == 1:
             constants = _FIRST_ORDER_COEFFICIENTS
@@ -76,8 +77,16 @@ def _get_finite_difference(input_array: numpy.array,
             constants = _THIRD_ORDER_COEFFICIENTS
         else:
             constants = _FIFTH_ORDER_COEFFICIENTS
+        constants = tf.convert_to_tensor(constants, dtype=tf.float32)
 
-    pointwise_multiplication = [
-        input_array[i] * constants[i] for i in range(len(constants))
-    ]
-    return numpy.sum(pointwise_multiplication)
+    # Ensure the constants and input_array are compatible in size
+    #constants = tf.reshape(constants, [-1])
+    #input_array = tf.reshape(input_array, [-1])
+    
+    # Element-wise multiplication
+    pointwise_multiplication = tf.multiply(input_array, constants)
+    
+    # Sum the results
+    result = tf.reduce_sum(pointwise_multiplication)
+    
+    return result
